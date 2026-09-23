@@ -1,0 +1,84 @@
+.admissions-admin-page { background: linear-gradient(180deg, #f5fbff 0, var(--background) 240px); }
+.admissions-metrics { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 12px; margin-bottom: 24px; }
+.admissions-toolbar { align-items: center; }
+.filter-row { display: flex; gap: 9px; }
+.filter-row select, .decision-form select, .decision-form input, .decision-form textarea { width: 100%; border: 1px solid #ccd5e1; border-radius: 6px; background: white; color: var(--text); outline: none; }
+.filter-row select { min-height: 42px; padding: 0 34px 0 11px; }
+.filter-row select:focus, .decision-form select:focus, .decision-form input:focus, .decision-form textarea:focus { border-color: var(--burgundy); box-shadow: 0 0 0 3px rgba(178,15,71,.08); }
+.admissions-table { min-width: 760px; }
+.admissions-table td { height: 67px; }
+.table-secondary { display: block; margin-top: 4px; color: var(--muted); font-size: 10px; }
+.status-pill.red { background: #fce8e8; color: #a21d25; }
+.status-pill.large { min-height: 30px; padding: 6px 12px; font-size: 11px; }
+.back-link { display: inline-flex; align-items: center; gap: 6px; color: #5f6d82; font-size: 13px; font-weight: 650; margin-bottom: 20px; }
+.back-link:hover { color: var(--burgundy); }
+.review-heading { display: flex; align-items: flex-start; justify-content: space-between; gap: 20px; margin-bottom: 24px; }
+.review-heading h1 { margin: 0 0 6px; color: var(--navy); font-family: Georgia, "Times New Roman", serif; font-size: 30px; }
+.review-heading p:last-child { color: var(--muted); font-size: 13px; margin-bottom: 0; }
+.review-layout { display: grid; grid-template-columns: minmax(0, 1.7fr) minmax(310px, .7fr); gap: 22px; align-items: start; }
+.review-main, .review-sidebar { display: grid; gap: 18px; min-width: 0; }
+.review-sidebar { position: sticky; top: 90px; }
+.applicant-overview, .application-record, .timeline-panel, .decision-panel { overflow: hidden; }
+.overview-grid { border-top: 1px solid var(--line); margin: 0; padding: 4px 22px 18px; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); }
+.overview-grid > div { min-width: 0; padding: 15px 12px 10px 0; }
+.overview-grid dt, .application-data dt { color: #7a8798; font-size: 10px; text-transform: uppercase; letter-spacing: .04em; font-weight: 750; }
+.overview-grid dd { margin: 6px 0 0; color: var(--text); font-size: 13px; overflow-wrap: anywhere; }
+.overview-grid a { color: var(--burgundy); font-weight: 700; }
+.application-sections { border-top: 1px solid var(--line); }
+.application-section { border-bottom: 1px solid var(--line); }
+.application-section:last-child { border-bottom: 0; }
+.application-section summary { min-height: 52px; padding: 0 20px; display: flex; align-items: center; justify-content: space-between; gap: 16px; color: var(--navy); font-size: 13px; font-weight: 750; cursor: pointer; list-style-position: inside; }
+.application-section summary span { color: #8994a4; font-size: 10px; font-weight: 600; }
+.application-data { margin: 0; padding: 0 20px 18px; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1px; background: var(--line); border-top: 1px solid var(--line); }
+.application-data > div { min-width: 0; min-height: 66px; padding: 13px; background: white; }
+.application-data dd { margin: 6px 0 0; color: #354258; font-size: 12px; line-height: 1.45; overflow-wrap: anywhere; white-space: pre-wrap; }
+.admin-document-list { border-top: 1px solid var(--line); }
+.admin-document-row { width: 100%; min-height: 62px; border: 0; border-bottom: 1px solid var(--line); background: white; color: var(--text); display: grid; grid-template-columns: 36px minmax(0, 1fr) 24px; align-items: center; gap: 10px; padding: 10px 20px; text-align: left; }
+.admin-document-row:last-child { border-bottom: 0; }
+.admin-document-row:hover { background: #f8fafc; }
+.admin-document-row > span { width: 34px; height: 34px; display: grid; place-items: center; background: #fbeaf0; color: var(--burgundy); border-radius: 6px; }
+.admin-document-row div { display: grid; gap: 4px; min-width: 0; }
+.admin-document-row strong { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 12px; }
+.admin-document-row small { color: var(--muted); text-transform: capitalize; font-size: 10px; }
+.empty-copy { color: var(--muted); font-size: 12px; padding: 18px 22px; margin: 0; }
+.section-error { margin: 12px 20px 18px; }
+.decision-panel { background: white; border: 1px solid var(--line); border-top: 3px solid var(--burgundy); border-radius: 7px; }
+.decision-form { border-top: 1px solid var(--line); padding: 18px; display: grid; gap: 14px; }
+.decision-form label { display: grid; gap: 6px; color: #3e4a5e; font-size: 11px; font-weight: 700; }
+.decision-form select, .decision-form input { min-height: 42px; padding: 0 11px; }
+.decision-form textarea { min-height: 92px; resize: vertical; padding: 10px 11px; line-height: 1.45; }
+.decision-complete { border-top: 1px solid var(--line); padding: 24px 20px; text-align: center; color: var(--green); display: grid; justify-items: center; gap: 7px; }
+.decision-complete strong { color: var(--navy); font-size: 14px; }
+.decision-complete p { color: var(--muted); font-size: 11px; line-height: 1.5; margin: 0; }
+.workflow-timeline { list-style: none; border-top: 1px solid var(--line); margin: 0; padding: 18px 18px 8px; }
+.workflow-timeline li { position: relative; display: grid; grid-template-columns: 16px minmax(0, 1fr); gap: 10px; padding-bottom: 20px; }
+.workflow-timeline li::before { content: ""; position: absolute; left: 5px; top: 11px; bottom: -2px; width: 1px; background: #dce2ea; }
+.workflow-timeline li:last-child::before { display: none; }
+.workflow-timeline li > span { width: 11px; height: 11px; margin-top: 3px; border-radius: 50%; border: 3px solid #f7dbe5; background: var(--burgundy); z-index: 1; }
+.workflow-timeline li > div { min-width: 0; display: grid; gap: 4px; }
+.workflow-timeline strong { color: var(--navy); font-size: 12px; }
+.workflow-timeline time, .workflow-timeline em, .workflow-timeline small { color: #8390a2; font-size: 10px; font-style: normal; }
+.workflow-timeline p { color: #4e5b6f; font-size: 11px; line-height: 1.45; margin: 3px 0; overflow-wrap: anywhere; }
+
+@media (max-width: 1250px) {
+  .admissions-metrics { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .overview-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+
+@media (max-width: 980px) {
+  .review-layout { grid-template-columns: 1fr; }
+  .review-sidebar { position: static; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .admissions-toolbar { align-items: stretch; flex-direction: column; }
+  .admissions-toolbar .table-search { width: 100%; }
+}
+
+@media (max-width: 680px) {
+  .admissions-metrics { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .admissions-metrics .metric-card:last-child { grid-column: 1 / -1; }
+  .filter-row { flex-direction: column; }
+  .review-heading { flex-direction: column; }
+  .review-sidebar { grid-template-columns: 1fr; }
+  .application-data, .overview-grid { grid-template-columns: 1fr; }
+  .application-section summary { padding: 0 14px; }
+  .application-data { padding: 0 14px 14px; }
+}

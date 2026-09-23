@@ -1,0 +1,572 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum UserStatus {
+  ACTIVE
+  SUSPENDED
+  ARCHIVED
+}
+
+enum StudentStatus {
+  APPLICANT
+  ACTIVE
+  WITHDRAWN
+  GRADUATED
+  ARCHIVED
+}
+
+enum StaffStatus {
+  ACTIVE
+  ON_LEAVE
+  LEFT
+  ARCHIVED
+}
+
+enum Gender {
+  FEMALE
+  MALE
+  OTHER
+  NOT_STATED
+}
+
+enum AuditOutcome {
+  SUCCESS
+  FAILURE
+}
+
+enum AdmissionStatus {
+  DRAFT
+  SUBMITTED
+  UNDER_REVIEW
+  ASSESSMENT
+  INTERVIEW
+  OFFERED
+  WAITLISTED
+  ACCEPTED
+  REJECTED
+  WITHDRAWN
+  ENROLLED
+}
+
+enum AttendanceStatus {
+  PRESENT
+  AUTHORISED_ABSENCE
+  UNAUTHORISED_ABSENCE
+}
+
+enum RegisterStatus {
+  OPEN
+  SUBMITTED
+}
+
+enum AssessmentResultStatus {
+  NOT_STARTED
+  IN_PROGRESS
+  COMPLETED
+}
+
+enum BehaviourEventType {
+  POSITIVE
+  INCIDENT
+}
+
+model User {
+  id                      String                   @id @default(uuid()) @db.Uuid
+  email                   String                   @unique
+  passwordHash            String
+  firstName               String
+  lastName                String
+  status                  UserStatus               @default(ACTIVE)
+  lastLoginAt             DateTime?
+  passwordChangedAt       DateTime                 @default(now())
+  createdAt               DateTime                 @default(now())
+  updatedAt               DateTime                 @updatedAt
+  archivedAt              DateTime?
+  roles                   UserRole[]
+  sessions                UserSession[]
+  passwordResetTokens     PasswordResetToken[]
+  student                 Student?
+  guardian                ParentGuardian?
+  staff                   Staff?
+  auditEvents             AuditEvent[]             @relation("AuditActor")
+  admissionWorkflowEvents AdmissionWorkflowEvent[] @relation("AdmissionWorkflowActor")
+
+  @@index([status])
+}
+
+model Role {
+  id          String           @id @default(uuid()) @db.Uuid
+  code        String           @unique
+  name        String
+  description String?
+  isSystem    Boolean          @default(false)
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+  users       UserRole[]
+  permissions RolePermission[]
+}
+
+model Permission {
+  id          String           @id @default(uuid()) @db.Uuid
+  code        String           @unique
+  description String
+  createdAt   DateTime         @default(now())
+  roles       RolePermission[]
+}
+
+model UserRole {
+  userId     String   @db.Uuid
+  roleId     String   @db.Uuid
+  assignedAt DateTime @default(now())
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  role       Role     @relation(fields: [roleId], references: [id], onDelete: Cascade)
+
+  @@id([userId, roleId])
+  @@index([roleId])
+}
+
+model RolePermission {
+  roleId       String     @db.Uuid
+  permissionId String     @db.Uuid
+  role         Role       @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  permission   Permission @relation(fields: [permissionId], references: [id], onDelete: Cascade)
+
+  @@id([roleId, permissionId])
+  @@index([permissionId])
+}
+
+model UserSession {
+  id               String    @id @default(uuid()) @db.Uuid
+  userId           String    @db.Uuid
+  refreshTokenHash String    @unique
+  userAgent        String?
+  ipAddress        String?
+  expiresAt        DateTime
+  revokedAt        DateTime?
+  createdAt        DateTime  @default(now())
+  user             User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, expiresAt])
+}
+
+model PasswordResetToken {
+  id        String    @id @default(uuid()) @db.Uuid
+  userId    String    @db.Uuid
+  tokenHash String    @unique
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime  @default(now())
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, expiresAt])
+}
+
+model Student {
+  id                   String                   @id @default(uuid()) @db.Uuid
+  admissionNumber      String                   @unique
+  userId               String?                  @unique @db.Uuid
+  firstName            String
+  middleName           String?
+  lastName             String
+  preferredName        String?
+  dateOfBirth          DateTime
+  gender               Gender                   @default(NOT_STATED)
+  nationality          String?
+  title                String?
+  email                String?
+  phone                String?
+  addressLine1         String?
+  addressLine2         String?
+  townCity             String?
+  postcode             String?
+  photoUrl             String?
+  status               StudentStatus            @default(ACTIVE)
+  createdAt            DateTime                 @default(now())
+  updatedAt            DateTime                 @updatedAt
+  archivedAt           DateTime?
+  user                 User?                    @relation(fields: [userId], references: [id], onDelete: SetNull)
+  guardians            StudentGuardian[]
+  enrollments          Enrollment[]
+  staffAssignments     StaffStudentAssignment[]
+  admissionApplication AdmissionApplication?
+  attendanceRecords    AttendanceRecord[]
+  assessmentResults    AssessmentResult[]
+  behaviourEvents      BehaviourEvent[]
+
+  @@index([lastName, firstName])
+  @@index([status])
+}
+
+model AdmissionApplication {
+  id                String                   @id @default(uuid()) @db.Uuid
+  applicationNumber String                   @unique
+  accessTokenHash   String
+  status            AdmissionStatus          @default(DRAFT)
+  currentStep       Int                      @default(1)
+  email             String
+  phone             String?
+  firstName         String
+  lastName          String
+  dateOfBirth       DateTime
+  entryYearGroup    String?
+  entryAcademicYear String                   @default("2026/2027")
+  source            String                   @default("School Website")
+  formVersion       Int                      @default(1)
+  formData          Json
+  studentId         String?                  @unique @db.Uuid
+  submittedAt       DateTime?
+  reviewedAt        DateTime?
+  createdAt         DateTime                 @default(now())
+  updatedAt         DateTime                 @updatedAt
+  student           Student?                 @relation(fields: [studentId], references: [id], onDelete: SetNull)
+  documents         AdmissionDocument[]
+  workflowEvents    AdmissionWorkflowEvent[]
+
+  @@index([email, dateOfBirth])
+  @@index([status, createdAt])
+  @@index([entryAcademicYear, entryYearGroup])
+}
+
+model AdmissionWorkflowEvent {
+  id            String               @id @default(uuid()) @db.Uuid
+  applicationId String               @db.Uuid
+  actorUserId   String?              @db.Uuid
+  fromStatus    AdmissionStatus?
+  toStatus      AdmissionStatus
+  note          String?
+  metadata      Json?
+  createdAt     DateTime             @default(now())
+  application   AdmissionApplication @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+  actor         User?                @relation("AdmissionWorkflowActor", fields: [actorUserId], references: [id], onDelete: SetNull)
+
+  @@index([applicationId, createdAt])
+  @@index([actorUserId, createdAt])
+  @@index([toStatus, createdAt])
+}
+
+model AdmissionDocument {
+  id            String               @id @default(uuid()) @db.Uuid
+  applicationId String               @db.Uuid
+  category      String
+  originalName  String
+  storedName    String               @unique
+  mimeType      String
+  sizeBytes     Int
+  uploadedAt    DateTime             @default(now())
+  application   AdmissionApplication @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+
+  @@index([applicationId, category])
+}
+
+model ParentGuardian {
+  id         String            @id @default(uuid()) @db.Uuid
+  userId     String?           @unique @db.Uuid
+  firstName  String
+  lastName   String
+  email      String?
+  phone      String?
+  createdAt  DateTime          @default(now())
+  updatedAt  DateTime          @updatedAt
+  archivedAt DateTime?
+  user       User?             @relation(fields: [userId], references: [id], onDelete: SetNull)
+  students   StudentGuardian[]
+
+  @@index([email])
+}
+
+model StudentGuardian {
+  studentId                 String         @db.Uuid
+  guardianId                String         @db.Uuid
+  relationship              String
+  isPrimaryContact          Boolean        @default(false)
+  hasPortalAccess           Boolean        @default(true)
+  hasParentalResponsibility Boolean        @default(false)
+  collectionAuthorized      Boolean        @default(false)
+  accessRestrictionNote     String?
+  student                   Student        @relation(fields: [studentId], references: [id], onDelete: Restrict)
+  guardian                  ParentGuardian @relation(fields: [guardianId], references: [id], onDelete: Restrict)
+
+  @@id([studentId, guardianId])
+  @@index([guardianId, hasPortalAccess])
+}
+
+model Staff {
+  id                 String                   @id @default(uuid()) @db.Uuid
+  staffNumber        String                   @unique
+  userId             String?                  @unique @db.Uuid
+  firstName          String
+  lastName           String
+  jobTitle           String
+  department         String?
+  status             StaffStatus              @default(ACTIVE)
+  createdAt          DateTime                 @default(now())
+  updatedAt          DateTime                 @updatedAt
+  archivedAt         DateTime?
+  user               User?                    @relation(fields: [userId], references: [id], onDelete: SetNull)
+  studentAssignments StaffStudentAssignment[]
+  timetableSlots     TimetableSlot[]
+}
+
+model AcademicYear {
+  id          String             @id @default(uuid()) @db.Uuid
+  name        String             @unique
+  startsOn    DateTime
+  endsOn      DateTime
+  isCurrent   Boolean            @default(false)
+  createdAt   DateTime           @default(now())
+  updatedAt   DateTime           @updatedAt
+  terms       Term[]
+  enrollments Enrollment[]
+  enquiries   AdmissionEnquiry[]
+}
+
+model Term {
+  id                  String               @id @default(uuid()) @db.Uuid
+  academicYearId      String               @db.Uuid
+  name                String
+  startsOn            DateTime
+  endsOn              DateTime
+  academicYear        AcademicYear         @relation(fields: [academicYearId], references: [id], onDelete: Restrict)
+  attendanceRegisters AttendanceRegister[]
+  assessments         Assessment[]
+  behaviourEvents     BehaviourEvent[]
+  timetableSlots      TimetableSlot[]
+
+  @@unique([academicYearId, name])
+  @@index([startsOn, endsOn])
+}
+
+model YearGroup {
+  id                  String               @id @default(uuid()) @db.Uuid
+  code                String               @unique
+  name                String
+  displayOrder        Int
+  enrollments         Enrollment[]
+  attendanceRegisters AttendanceRegister[]
+  assessments         Assessment[]
+  timetableSlots      TimetableSlot[]
+  formGroups           FormGroup[]
+}
+
+model FormGroup {
+  id          String       @id @default(uuid()) @db.Uuid
+  code        String       @unique
+  name        String
+  yearGroupId String       @db.Uuid
+  isActive    Boolean      @default(true)
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+  yearGroup   YearGroup    @relation(fields: [yearGroupId], references: [id], onDelete: Restrict)
+  enrollments Enrollment[]
+
+  @@index([yearGroupId, isActive])
+}
+
+model House {
+  id          String       @id @default(uuid()) @db.Uuid
+  code        String       @unique
+  name        String       @unique
+  isActive    Boolean      @default(true)
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+  enrollments Enrollment[]
+}
+
+model Subject {
+  id             String          @id @default(uuid()) @db.Uuid
+  code           String          @unique
+  name           String
+  department     String?
+  isActive       Boolean         @default(true)
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+  timetableSlots TimetableSlot[]
+}
+
+model Enrollment {
+  id             String       @id @default(uuid()) @db.Uuid
+  studentId      String       @db.Uuid
+  academicYearId String       @db.Uuid
+  yearGroupId    String       @db.Uuid
+  formGroupId    String?      @db.Uuid
+  houseId        String?      @db.Uuid
+  startsOn       DateTime
+  endsOn         DateTime?
+  student        Student      @relation(fields: [studentId], references: [id], onDelete: Restrict)
+  academicYear   AcademicYear @relation(fields: [academicYearId], references: [id], onDelete: Restrict)
+  yearGroup      YearGroup    @relation(fields: [yearGroupId], references: [id], onDelete: Restrict)
+  formGroup      FormGroup?   @relation(fields: [formGroupId], references: [id], onDelete: Restrict)
+  house          House?       @relation(fields: [houseId], references: [id], onDelete: Restrict)
+
+  @@unique([studentId, academicYearId])
+  @@index([academicYearId, yearGroupId])
+  @@index([formGroupId])
+  @@index([houseId])
+}
+
+model StaffStudentAssignment {
+  staffId   String    @db.Uuid
+  studentId String    @db.Uuid
+  scope     String
+  startsOn  DateTime
+  endsOn    DateTime?
+  staff     Staff     @relation(fields: [staffId], references: [id], onDelete: Restrict)
+  student   Student   @relation(fields: [studentId], references: [id], onDelete: Restrict)
+
+  @@id([staffId, studentId, scope, startsOn])
+  @@index([studentId, startsOn, endsOn])
+}
+
+model AdmissionEnquiry {
+  id             String       @id @default(uuid()) @db.Uuid
+  academicYearId String       @db.Uuid
+  firstName      String
+  lastName       String
+  email          String?
+  source         String
+  createdAt      DateTime     @default(now())
+  academicYear   AcademicYear @relation(fields: [academicYearId], references: [id], onDelete: Restrict)
+
+  @@index([academicYearId, createdAt])
+  @@index([source, createdAt])
+}
+
+model AttendanceRegister {
+  id          String             @id @default(uuid()) @db.Uuid
+  termId      String             @db.Uuid
+  yearGroupId String             @db.Uuid
+  date        DateTime           @db.Date
+  periodLabel String
+  status      RegisterStatus     @default(OPEN)
+  submittedAt DateTime?
+  createdAt   DateTime           @default(now())
+  term        Term               @relation(fields: [termId], references: [id], onDelete: Restrict)
+  yearGroup   YearGroup          @relation(fields: [yearGroupId], references: [id], onDelete: Restrict)
+  records     AttendanceRecord[]
+
+  @@unique([termId, yearGroupId, date, periodLabel])
+  @@index([date, status])
+}
+
+model AttendanceRecord {
+  id         String             @id @default(uuid()) @db.Uuid
+  registerId String             @db.Uuid
+  studentId  String             @db.Uuid
+  status     AttendanceStatus
+  recordedAt DateTime           @default(now())
+  register   AttendanceRegister @relation(fields: [registerId], references: [id], onDelete: Restrict)
+  student    Student            @relation(fields: [studentId], references: [id], onDelete: Restrict)
+
+  @@unique([registerId, studentId])
+  @@index([studentId, recordedAt])
+  @@index([status, recordedAt])
+}
+
+model Assessment {
+  id          String             @id @default(uuid()) @db.Uuid
+  termId      String             @db.Uuid
+  yearGroupId String             @db.Uuid
+  title       String
+  dueAt       DateTime
+  createdAt   DateTime           @default(now())
+  term        Term               @relation(fields: [termId], references: [id], onDelete: Restrict)
+  yearGroup   YearGroup          @relation(fields: [yearGroupId], references: [id], onDelete: Restrict)
+  results     AssessmentResult[]
+
+  @@index([termId, dueAt])
+  @@index([yearGroupId, dueAt])
+}
+
+model AssessmentResult {
+  id            String                 @id @default(uuid()) @db.Uuid
+  assessmentId  String                 @db.Uuid
+  studentId     String                 @db.Uuid
+  status        AssessmentResultStatus @default(NOT_STARTED)
+  attainmentPct Float?
+  progressPct   Float?
+  updatedAt     DateTime               @updatedAt
+  assessment    Assessment             @relation(fields: [assessmentId], references: [id], onDelete: Restrict)
+  student       Student                @relation(fields: [studentId], references: [id], onDelete: Restrict)
+
+  @@unique([assessmentId, studentId])
+  @@index([studentId, status])
+}
+
+model BehaviourEvent {
+  id         String             @id @default(uuid()) @db.Uuid
+  studentId  String             @db.Uuid
+  termId     String             @db.Uuid
+  type       BehaviourEventType
+  summary    String
+  occurredAt DateTime
+  resolvedAt DateTime?
+  createdAt  DateTime           @default(now())
+  student    Student            @relation(fields: [studentId], references: [id], onDelete: Restrict)
+  term       Term               @relation(fields: [termId], references: [id], onDelete: Restrict)
+
+  @@index([termId, occurredAt])
+  @@index([type, resolvedAt])
+}
+
+model TimetableSlot {
+  id          String    @id @default(uuid()) @db.Uuid
+  termId      String    @db.Uuid
+  yearGroupId String    @db.Uuid
+  subjectId   String    @db.Uuid
+  staffId     String?   @db.Uuid
+  weekday     Int
+  startsAt    String
+  endsAt      String
+  periodLabel String
+  room        String?
+  term        Term      @relation(fields: [termId], references: [id], onDelete: Restrict)
+  yearGroup   YearGroup @relation(fields: [yearGroupId], references: [id], onDelete: Restrict)
+  subject     Subject   @relation(fields: [subjectId], references: [id], onDelete: Restrict)
+  staff       Staff?    @relation(fields: [staffId], references: [id], onDelete: SetNull)
+
+  @@unique([termId, yearGroupId, weekday, startsAt])
+  @@index([termId, weekday, startsAt])
+}
+
+model AuditEvent {
+  id          String       @id @default(uuid()) @db.Uuid
+  actorUserId String?      @db.Uuid
+  action      String
+  entityType  String
+  entityId    String?
+  outcome     AuditOutcome @default(SUCCESS)
+  requestId   String
+  ipAddress   String?
+  userAgent   String?
+  before      Json?
+  after       Json?
+  metadata    Json?
+  createdAt   DateTime     @default(now())
+  actor       User?        @relation("AuditActor", fields: [actorUserId], references: [id], onDelete: SetNull)
+
+  @@index([actorUserId, createdAt])
+  @@index([entityType, entityId, createdAt])
+  @@index([action, createdAt])
+}
+
+model ImportJob {
+  id          String    @id @default(uuid()) @db.Uuid
+  type        String
+  status      String
+  sourceName  String
+  totalRows   Int       @default(0)
+  validRows   Int       @default(0)
+  invalidRows Int       @default(0)
+  report      Json?
+  createdById String    @db.Uuid
+  createdAt   DateTime  @default(now())
+  completedAt DateTime?
+
+  @@index([createdById, createdAt])
+}
