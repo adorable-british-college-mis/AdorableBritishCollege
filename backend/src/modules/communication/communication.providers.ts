@@ -119,159 +119,70 @@ function buildSchoolEmailTemplate(input: {
     <tr>
       <td align="center" style="padding:32px 16px;">
 
-        <table
-          role="presentation"
-          width="100%"
-          cellspacing="0"
-          cellpadding="0"
-          border="0"
-          style="
-            width:100%;
-            max-width:640px;
-            background-color:#ffffff;
-            border-radius:16px;
-            overflow:hidden;
-            box-shadow:0 4px 20px rgba(18,33,59,0.08);
-          "
-        >
+        <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="width:100%;max-width:600px;background-color:#ffffff;border-radius:16px;overflow:hidden;box-shadow:0 4px 24px rgba(18,33,59,0.10);">
 
           <!-- Header -->
           <tr>
-            <td
-              align="center"
-              style="
-                padding:32px 36px;
-                background-color:#4c237c;
-              "
-            >
-
-              <div
-                style="
-                  font-size:24px;
-                  line-height:32px;
-                  font-weight:700;
-                  color:#ffffff;
-                "
-              >
-                Adorable British College
-              </div>
-
-              <div
-                style="
-                  margin-top:6px;
-                  font-size:13px;
-                  line-height:20px;
-                  color:#e8daf5;
-                "
-              >
-                Official School Communication
-              </div>
-
+            <td style="padding:36px 40px;background-color:#3b1e78;">
+              <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0">
+                <tr>
+                  <td width="52" valign="middle">
+                    <div style="width:48px;height:48px;border-radius:50%;border:2px solid #c4a8f0;text-align:center;line-height:48px;">
+                      <span style="font-size:18px;font-weight:700;color:#ffffff;letter-spacing:1px;">ABC</span>
+                    </div>
+                  </td>
+                  <td style="padding-left:16px;">
+                    <div style="font-size:22px;line-height:28px;font-weight:700;color:#ffffff;">Adorable British College</div>
+                    <div style="margin-top:4px;font-size:13px;line-height:18px;color:#d4c2f0;">Official School Communication</div>
+                  </td>
+                </tr>
+              </table>
             </td>
           </tr>
 
           <!-- Content -->
           <tr>
-            <td style="padding:38px 36px 32px 36px;">
+            <td style="padding:36px 40px 28px 40px;">
 
-              <!-- Category -->
-              <div
-                style="
-                  margin-bottom:8px;
-                  font-size:12px;
-                  line-height:18px;
-                  font-weight:700;
-                  letter-spacing:0.8px;
-                  text-transform:uppercase;
-                  color:#7652a5;
-                "
-              >
+              <div style="margin-bottom:10px;font-size:11px;line-height:16px;font-weight:700;letter-spacing:1.2px;text-transform:uppercase;color:#7c54b5;">
                 School Communication
               </div>
 
-              <!-- Subject -->
-              <h1
-                style="
-                  margin:0 0 26px 0;
-                  padding-bottom:22px;
-                  border-bottom:1px solid #e8eaf0;
-                  font-size:26px;
-                  line-height:34px;
-                  font-weight:700;
-                  color:#172033;
-                "
-              >
+              <h1 style="margin:0 0 24px 0;padding-bottom:20px;border-bottom:1px solid #eceef2;font-size:24px;line-height:32px;font-weight:700;color:#172033;">
                 ${subject}
               </h1>
 
-              <!-- Greeting -->
-              <p
-                style="
-                  margin:0 0 22px 0;
-                  font-size:16px;
-                  line-height:26px;
-                  color:#30394a;
-                "
-              >
+              <p style="margin:0 0 20px 0;font-size:16px;line-height:26px;color:#3a4258;">
                 Dear ${recipientName},
               </p>
 
-              <!-- Staff-written message -->
-              <div
-                style="
-                  font-size:16px;
-                  line-height:26px;
-                  color:#30394a;
-                "
-              >
+              <div style="font-size:16px;line-height:26px;color:#3a4258;">
                 ${message}
               </div>
 
               <!-- Help box -->
-              <table
-                role="presentation"
-                width="100%"
-                cellspacing="0"
-                cellpadding="0"
-                border="0"
-                style="margin-top:32px;"
-              >
+              <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="margin-top:28px;">
                 <tr>
-                  <td
-                    style="
-                      padding:18px 20px;
-                      background-color:#f7f3fb;
-                      border-left:4px solid #6f3fa0;
-                      border-radius:6px;
-                      font-size:14px;
-                      line-height:22px;
-                      color:#4b4058;
-                    "
-                  >
-                    <strong style="color:#3f1d75;">
-                      Need assistance?
-                    </strong>
-                    <br>
-                    Please contact the school office if you have any
-                    questions regarding this communication.
+                  <td style="padding:16px 18px;background-color:#f5f3ff;border-left:4px solid #3b1e78;border-radius:8px;">
+                    <table role="presentation" cellspacing="0" cellpadding="0" border="0">
+                      <tr>
+                        <td width="28" valign="top">
+                          <div style="width:22px;height:22px;border-radius:50%;background-color:#3b1e78;color:#ffffff;text-align:center;font-size:14px;font-weight:700;line-height:22px;">i</div>
+                        </td>
+                        <td style="padding-left:12px;">
+                          <strong style="display:block;margin-bottom:4px;font-size:14px;color:#3b1e78;">Need assistance?</strong>
+                          <span style="font-size:13px;line-height:21px;color:#5b5470;">Please contact the school office if you have any questions regarding this communication.</span>
+                        </td>
+                      </tr>
+                    </table>
                   </td>
                 </tr>
               </table>
 
               <!-- Signature -->
-              <div
-                style="
-                  margin-top:32px;
-                  font-size:15px;
-                  line-height:24px;
-                  color:#30394a;
-                "
-              >
-                Kind regards,
-                <br>
-                <strong style="color:#4c237c;">
-                  Adorable British College
-                </strong>
+              <div style="margin-top:28px;font-size:15px;line-height:24px;color:#3a4258;">
+                Kind regards,<br>
+                <strong style="color:#3b1e78;">Adorable British College</strong>
               </div>
 
             </td>
@@ -279,38 +190,9 @@ function buildSchoolEmailTemplate(input: {
 
           <!-- Footer -->
           <tr>
-            <td
-              align="center"
-              style="
-                padding:24px 36px;
-                background-color:#f8f9fb;
-                border-top:1px solid #eceef2;
-              "
-            >
-
-              <p
-                style="
-                  margin:0 0 6px 0;
-                  font-size:12px;
-                  line-height:19px;
-                  color:#7a8190;
-                "
-              >
-                This email was sent by Adorable British College.
-              </p>
-
-              <p
-                style="
-                  margin:0;
-                  font-size:12px;
-                  line-height:19px;
-                  color:#9a9faa;
-                "
-              >
-                This communication may contain information intended
-                only for the recipient.
-              </p>
-
+            <td align="center" style="padding:22px 40px;background-color:#f9fafb;border-top:1px solid #eceef2;">
+              <p style="margin:0 0 5px 0;font-size:12px;line-height:18px;color:#8a92a0;">This email was sent by Adorable British College.</p>
+              <p style="margin:0;font-size:12px;line-height:18px;color:#a0a6b2;">This communication may contain information intended only for the recipient.</p>
             </td>
           </tr>
 
@@ -319,7 +201,7 @@ function buildSchoolEmailTemplate(input: {
         <!-- Copyright -->
         <div
           style="
-            max-width:640px;
+            max-width:600px;
             padding:18px 20px 0 20px;
             text-align:center;
             font-size:11px;
