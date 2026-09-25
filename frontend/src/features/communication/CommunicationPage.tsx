@@ -664,102 +664,108 @@ function ComposeModal({
                     Recipients
                   </label>
 
-                  {selectedRecipients.length > 0 && (
-                    <div className="email-recipient-chips">
-                      {selectedRecipients.map((recipient) => (
-                        <div
-                          key={recipient.key}
-                          className="email-recipient-chip"
-                        >
-                          <span className="email-recipient-avatar">
-                            {initials(recipient.name)}
-                          </span>
+                  <div className="email-recipient-container">
+                    <div className="email-recipient-search-row">
+                      <Search />
 
-                          <div className="email-recipient-info">
-                            <strong>{recipient.name}</strong>
+                      <input
+                        value={recipientSearch}
+                        onChange={(e) =>
+                          setRecipientSearch(e.target.value)
+                        }
+                        placeholder="Search students, parents or staff..."
+                      />
 
-                            <small>
-                              {recipient.role}
+                      <strong className="email-recipient-count">
+                        {selected.size} selected
+                      </strong>
+                    </div>
 
-                              {recipient.email
-                                ? ` · ${recipient.email}`
-                                : ""}
-                            </small>
+                    {selectedRecipients.length > 0 && (
+                      <div className="email-recipient-selected-list">
+                        {selectedRecipients.map((recipient) => (
+                          <div
+                            key={recipient.key}
+                            className="email-recipient-selected-item"
+                          >
+                            <span className="email-recipient-avatar">
+                              {initials(recipient.name)}
+                            </span>
+
+                            <div className="email-recipient-info">
+                              <strong>{recipient.name}</strong>
+
+                              <small>
+                                {recipient.role}
+
+                                {recipient.email
+                                  ? ` · ${recipient.email}`
+                                  : ""}
+                              </small>
+                            </div>
+
+                            <button
+                              type="button"
+                              onClick={() =>
+                                toggleRecipient(recipient)
+                              }
+                            >
+                              <X />
+                            </button>
                           </div>
+                        ))}
+                      </div>
+                    )}
 
+                    {recipientSearch && (
+                      <div className="email-recipient-results">
+                        {visibleRecipients.map((recipient) => (
                           <button
                             type="button"
+                            key={recipient.key}
+                            className={
+                              selected.has(recipient.key)
+                                ? "selected"
+                                : ""
+                            }
                             onClick={() =>
                               toggleRecipient(recipient)
                             }
                           >
-                            <X />
+                            <span>
+                              {initials(recipient.name)}
+                            </span>
+
+                            <div>
+                              <strong>
+                                {recipient.name}
+                              </strong>
+
+                              <small>
+                                {recipient.role}
+
+                                {recipient.email
+                                  ? ` · ${recipient.email}`
+                                  : ""}
+                              </small>
+                            </div>
+
+                            {selected.has(recipient.key) ? (
+                              <Check />
+                            ) : (
+                              <Plus />
+                            )}
                           </button>
-                        </div>
-                      ))}
-                    </div>
-                  )}
+                        ))}
 
-                  <div className="email-recipient-search">
-                    <Search />
-
-                    <input
-                      value={recipientSearch}
-                      onChange={(e) =>
-                        setRecipientSearch(e.target.value)
-                      }
-                      placeholder="Search students, parents or staff..."
-                    />
-                  </div>
-
-                  {recipientSearch && (
-                    <div className="email-recipient-results">
-                      {visibleRecipients.map((recipient) => (
-                        <button
-                          type="button"
-                          key={recipient.key}
-                          className={
-                            selected.has(recipient.key)
-                              ? "selected"
-                              : ""
-                          }
-                          onClick={() =>
-                            toggleRecipient(recipient)
-                          }
-                        >
-                          <span>
-                            {initials(recipient.name)}
-                          </span>
-
-                          <div>
-                            <strong>
-                              {recipient.name}
-                            </strong>
-
-                            <small>
-                              {recipient.role}
-
-                              {recipient.email
-                                ? ` · ${recipient.email}`
-                                : ""}
-                            </small>
+                        {!visibleRecipients.length && (
+                          <div className="communication-recipient-empty">
+                            No matching recipients found.
                           </div>
-
-                          {selected.has(recipient.key) ? (
-                            <Check />
-                          ) : (
-                            <Plus />
-                          )}
-                        </button>
-                      ))}
-
-                      {!visibleRecipients.length && (
-                        <div className="communication-recipient-empty">
-                          No matching recipients found.
-                        </div>
-                      )}
-                    </div>
-                  )}
+                        )}
+                      </div>
+                    )}
+                  </div>
                 </div>
 
                 <label className="communication-email-field">
