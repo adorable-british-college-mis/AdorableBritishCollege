@@ -7,6 +7,7 @@ import { hashToken } from "../../security/token.js";
 import { recordAuditEvent } from "../audit/audit.service.js";
 import {
   adminApplicationListSchema,
+  adminApplicationUpdateSchema,
   admissionTransitionSchema,
   enrolApplicationSchema,
   sectionKeys,
@@ -15,8 +16,70 @@ import {
 } from "./admissions.schemas.js";
 
 type AdminListInput = z.infer<typeof adminApplicationListSchema>;
+type AdminUpdateInput = z.infer<typeof adminApplicationUpdateSchema>;
 type TransitionInput = z.infer<typeof admissionTransitionSchema>;
 type EnrolInput = z.infer<typeof enrolApplicationSchema>;
+
+const reasonForLeavingCodes = new Set([
+  "ACADEMIC_PROGRESSION",
+  "RELOCATION",
+  "CHANGE_OF_CURRICULUM",
+  "BOARDING_REQUIREMENT",
+  "FAMILY_CIRCUMSTANCES",
+  "CURRENT_SCHOOL_CLOSURE",
+  "OTHER",
+]);
+
+function jsonObject(value: Prisma.JsonValue | undefined) {
+  return value && typeof value === "object" && !Array.isArray(value)
+    ? value as Prisma.JsonObject
+    : null;
+}
+
+function normalizeReasonForLeaving(value: Prisma.JsonValue | undefined) {
+  if (typeof value !== "string" || !value.trim()) return "";
+  if (reasonForLeavingCodes.has(value)) return value;
+  const normalized = value.toLowerCase();
+  if (normalized.includes("progress")) return "ACADEMIC_PROGRESSION";
+  if (normalized.includes("relocat") || normalized.includes("mov")) return "RELOCATION";
+  if (normalized.includes("curriculum")) return "CHANGE_OF_CURRICULUM";
+  if (normalized.includes("board")) return "BOARDING_REQUIREMENT";
+  if (normalized.includes("family")) return "FAMILY_CIRCUMSTANCES";
+  if (normalized.includes("clos")) return "CURRENT_SCHOOL_CLOSURE";
+  return "OTHER";
+}
+
+function normalizeApplicationFormData(value: Prisma.JsonValue) {
+  const root = jsonObject(value);
+  if (!root) return value;
+  const personal = jsonObject(root.personal);
+  const entry = jsonObject(root.entry);
+  const academic = jsonObject(root.academic);
+  const normalizedEntry = entry ? { ...entry } : null;
+  if (normalizedEntry) {
+    delete normalizedEntry.scholarshipInterest;
+    delete normalizedEntry.scholarshipNotes;
+    delete normalizedEntry.bursaryInterest;
+    delete normalizedEntry.bursaryNotes;
+  }
+  return {
+    ...root,
+    ...(personal ? {
+      personal: {
+        ...personal,
+        gender: personal.gender === "MALE" || personal.gender === "FEMALE" ? personal.gender : "",
+      },
+    } : {}),
+    ...(normalizedEntry ? { entry: normalizedEntry } : {}),
+    ...(academic ? {
+      academic: {
+        ...academic,
+        curriculum: "NIGERIAN_BRITISH_BLEND",
+        reasonForLeaving: normalizeReasonForLeaving(academic.reasonForLeaving),
+      },
+    } : {}),
+  } as Prisma.JsonObject;
+}
 
 function applicationNumber() {
   return `ABC-APP-${new Date().getUTCFullYear()}-${randomBytes(4).toString("hex").toUpperCase()}`;
@@ -33,7 +96,7 @@ function publicApplication(application: Awaited<ReturnType<typeof findApplicatio
     lastName: application.lastName,
     entryYearGroup: application.entryYearGroup,
     entryAcademicYear: application.entryAcademicYear,
-    formData: application.formData,
+    formData: normalizeApplicationFormData(application.formData),
     submittedAt: application.submittedAt,
     updatedAt: application.updatedAt,
     documents: application.documents.map(({ id, category, originalName, mimeType, sizeBytes, uploadedAt }) => ({ id, category, originalName, mimeType, sizeBytes, uploadedAt })),
@@ -88,7 +151,7 @@ export async function saveSection(id: string, token: string | undefined, section
   const application = await authorizeApplication(id, token);
   if (application.status !== "DRAFT") throw new AppError(409, "APPLICATION_LOCKED", "Submitted applications can no longer be edited.");
   const sectionData = sectionSchemas[section].parse(input);
-  const existing = application.formData as Record<string, Prisma.JsonValue>;
+  const existing = normalizeApplicationFormData(application.formData) as Record<string, Prisma.JsonValue>;
   const nextStep = Math.min(8, Math.max(application.currentStep, sectionKeys.indexOf(section) + 2));
   const updated = await prisma.admissionApplication.update({
     where: { id },
@@ -146,12 +209,12 @@ export async function submitApplication(id: string, token: string | undefined, r
   return publicApplication(submitted);
 }
 
-export async function trackApplication(input: { applicationNumber: string; email: string; dateOfBirth: string }) {
-  const application = await prisma.admissionApplication.findFirst({
-    where: { applicationNumber: input.applicationNumber.toUpperCase(), email: input.email.toLowerCase(), dateOfBirth: new Date(`${input.dateOfBirth}T00:00:00.000Z`) },
+export async function trackApplication(input: { applicationNumber: string }) {
+  const application = await prisma.admissionApplication.findUnique({
+    where: { applicationNumber: input.applicationNumber.toUpperCase() },
     select: { applicationNumber: true, firstName: true, lastName: true, status: true, entryYearGroup: true, entryAcademicYear: true, submittedAt: true, updatedAt: true },
   });
-  if (!application) throw new AppError(404, "APPLICATION_NOT_FOUND", "No matching application was found. Check the details and try again.");
+  if (!application) throw new AppError(404, "APPLICATION_NOT_FOUND", "No application was found with that application number.");
   return application;
 }
 
@@ -262,7 +325,23 @@ export async function getAdminApplication(id: string) {
     },
   });
   if (!application || application.status === "DRAFT") throw new AppError(404, "APPLICATION_NOT_FOUND", "The submitted application could not be found.");
-  return application;
+  return { ...application, formData: normalizeApplicationFormData(application.formData) };
+}
+
+export async function updateAdminApplication(id: string, input: AdminUpdateInput, actorUserId: string, requestId: string) {
+  const existing = await prisma.admissionApplication.findUnique({ where: { id } });
+  if (!existing) throw new AppError(404, "APPLICATION_NOT_FOUND", "The application was not found.");
+  const formData = normalizeApplicationFormData(existing.formData) as Record<string, unknown>;
+  const personal = (formData.personal && typeof formData.personal === "object" && !Array.isArray(formData.personal) ? formData.personal : {}) as Record<string, unknown>;
+  const entry = (formData.entry && typeof formData.entry === "object" && !Array.isArray(formData.entry) ? formData.entry : {}) as Record<string, unknown>;
+  const nextFormData = {
+    ...formData,
+    personal: { ...personal, legalFirstName: input.firstName, legalLastName: input.lastName, dateOfBirth: input.dateOfBirth, applicantEmail: input.email, applicantPhone: input.phone },
+    entry: { ...entry, yearGroup: input.entryYearGroup },
+  } as Prisma.InputJsonValue;
+  await prisma.admissionApplication.update({ where: { id }, data: { firstName: input.firstName, lastName: input.lastName, dateOfBirth: new Date(`${input.dateOfBirth}T00:00:00.000Z`), email: input.email, phone: input.phone, entryYearGroup: input.entryYearGroup, formData: nextFormData } });
+  await recordAuditEvent({ actorUserId, action: "admission.application.update", entityType: "AdmissionApplication", entityId: id, requestId, before: { firstName: existing.firstName, lastName: existing.lastName, email: existing.email, phone: existing.phone, entryYearGroup: existing.entryYearGroup }, after: input });
+  return getAdminApplication(id);
 }
 
 export async function getAdminDocument(applicationId: string, documentId: string) {

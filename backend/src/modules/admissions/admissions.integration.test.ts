@@ -31,6 +31,7 @@ describe("public admissions journey", () => {
       gender: "FEMALE", nationality: "Nigerian", countryOfBirth: "Nigeria", religion: "",
       firstLanguage: "English", additionalLanguages: "Yoruba", applicantEmail: uniqueEmail, applicantPhone: "+2348000000000",
     };
+    await request(app).post("/api/v1/admissions/applications").send({ ...personal, gender: "OTHER" }).expect(400);
     const started = await request(app).post("/api/v1/admissions/applications").send(personal).expect(201);
     const id = started.body.data.application.id as string;
     const token = started.body.data.applicationToken as string;
@@ -39,14 +40,14 @@ describe("public admissions journey", () => {
     const headers = { "x-application-token": token };
 
     const sections = {
-      entry: { academicYear: "2026/2027", yearGroup: "YEAR_7", entryTerm: "AUTUMN", pupilType: "DAY", currentSchoolYear: "Year 6", proposedStartDate: "2026-09-08", scholarshipInterest: false, scholarshipNotes: "" },
+      entry: { academicYear: "2026/2027", yearGroup: "YEAR_7", entryTerm: "AUTUMN", pupilType: "DAY", currentSchoolYear: "Year 6", proposedStartDate: "2026-09-08", scholarshipInterest: true, scholarshipNotes: "Retired field" },
       guardians: {
         primaryGuardian: { title: "MRS", firstName: "Grace", lastName: "Cole", relationship: "MOTHER", parentalResponsibility: true, email: uniqueEmail, phone: "+2348000000000", alternatePhone: "", occupation: "Engineer", livesWithApplicant: true, preferredContactMethod: "EMAIL", address: { line1: "1 Test Avenue", line2: "", city: "Lagos", countyState: "Lagos", postcode: "", country: "Nigeria" } },
         addSecondGuardian: false,
         secondGuardian: { title: "MRS", firstName: "", lastName: "", relationship: "MOTHER", parentalResponsibility: true, email: "", phone: "", alternatePhone: "", occupation: "", livesWithApplicant: true, preferredContactMethod: "EMAIL", address: { line1: "", line2: "", city: "", countyState: "", postcode: "", country: "Nigeria" } },
         custodyOrAccessRestrictions: false, restrictionDetails: "",
       },
-      academic: { previousSchoolName: "Example Preparatory School", previousSchoolAddress: "Lagos", previousSchoolCountry: "Nigeria", attendanceFrom: "2020-09-01", attendanceTo: "", curriculum: "BRITISH", currentYearGroup: "Year 6", reasonForLeaving: "Progression to secondary school", headteacherName: "", schoolEmail: "", schoolPhone: "", englishProficiency: "FLUENT", learningStrengths: "Mathematics and reading", supportHistory: "", permissionToContactSchool: true },
+      academic: { previousSchoolName: "Example Preparatory School", previousSchoolAddress: "Lagos", previousSchoolCountry: "Nigeria", attendanceFrom: "2020-09-01", attendanceTo: "", curriculum: "NIGERIAN_BRITISH_BLEND", currentYearGroup: "Year 6", reasonForLeaving: "ACADEMIC_PROGRESSION", headteacherName: "", schoolEmail: "", schoolPhone: "", englishProficiency: "FLUENT", learningStrengths: "Mathematics and reading", supportHistory: "", permissionToContactSchool: true },
       medical: { doctorName: "", doctorPhone: "", bloodGroup: "", medicalConditions: "None", allergies: "None", regularMedication: "None", dietaryRequirements: "None", disabilitiesOrSend: false, sendDetails: "", immunisationsUpToDate: "YES", mentalHealthOrWelfareNeeds: "", emergencyTreatmentConsent: true },
       emergency: { contacts: [{ fullName: "David Cole", relationship: "Uncle", primaryPhone: "+2348000000001", alternatePhone: "", email: "", authorisedToCollect: true }], collectionNotes: "" },
       documents: { additionalInformation: "" },
@@ -64,8 +65,12 @@ describe("public admissions journey", () => {
     const submitted = await request(app).post(`/api/v1/admissions/applications/${id}/submit`).set(headers).expect(200);
     expect(submitted.body.data.status).toBe("SUBMITTED");
     expect(submitted.body.data.documents).toHaveLength(3);
+    expect(submitted.body.data.formData.entry).not.toHaveProperty("scholarshipInterest");
+    expect(submitted.body.data.formData.entry).not.toHaveProperty("scholarshipNotes");
+    expect(submitted.body.data.formData.academic.curriculum).toBe("NIGERIAN_BRITISH_BLEND");
+    expect(submitted.body.data.formData.academic.reasonForLeaving).toBe("ACADEMIC_PROGRESSION");
 
-    const tracked = await request(app).post("/api/v1/admissions/track").send({ applicationNumber, email: uniqueEmail, dateOfBirth: personal.dateOfBirth }).expect(200);
+    const tracked = await request(app).post("/api/v1/admissions/track").send({ applicationNumber }).expect(200);
     expect(tracked.body.data.status).toBe("SUBMITTED");
     expect(tracked.body.data.firstName).toBe("Amina");
 
@@ -75,6 +80,14 @@ describe("public admissions journey", () => {
     const listed = await request(app).get(`/api/v1/admissions/admin/applications?search=${applicationNumber}`).set(authorization).expect(200);
     expect(listed.body.data.items).toHaveLength(1);
     expect(listed.body.data.items[0].id).toBe(id);
+
+    const edited = await request(app)
+      .patch(`/api/v1/admissions/admin/applications/${id}`)
+      .set(authorization)
+      .send({ firstName: "Amina", lastName: "Cole-Smith", dateOfBirth: personal.dateOfBirth, email: uniqueEmail, phone: "+2348000000009", entryYearGroup: "YEAR_9" })
+      .expect(200);
+    expect(edited.body.data.lastName).toBe("Cole-Smith");
+    expect(edited.body.data.entryYearGroup).toBe("YEAR_9");
 
     for (const targetStatus of ["UNDER_REVIEW", "OFFERED", "ACCEPTED"] as const) {
       const transitioned = await request(app)

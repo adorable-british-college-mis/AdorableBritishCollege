@@ -21,7 +21,7 @@ const navModules: NavModule[] = [
   { to: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { to: "/students", label: "Students", icon: Users },
   { to: "/admissions", label: "Admissions", icon: GraduationCap, hasSubmenu: true },
-  { to: "/academics", label: "Academics", icon: BookOpen },
+  { to: "/academics", label: "Academics", icon: BookOpen, hasSubmenu: true },
   { to: "/timetable", label: "Timetable", icon: CalendarDays },
   { to: "/attendance", label: "Attendance", icon: ClipboardCheck },
   { to: "/behaviour", label: "Behaviour", icon: Award },
@@ -45,6 +45,16 @@ const admissionsSubmenu = [
   { to: "/admissions/enrolments", label: "Enrolments" },
 ];
 
+const academicsSubmenu = [
+  { to: "/academics", label: "Overview" },
+  { to: "/academics/subjects", label: "Subjects" },
+  { to: "/academics/curriculum", label: "Curriculum" },
+  { to: "/academics/classes", label: "Classes" },
+  { to: "/academics/teachers", label: "Teachers" },
+  { to: "/academics/departments", label: "Departments" },
+  { to: "/academics/assessment-plans", label: "Assessment Plans" },
+];
+
 export function AppShell() {
   const { user, signOut } = useAuth();
   const navigate = useNavigate();
@@ -52,6 +62,7 @@ export function AppShell() {
 
   const [mobileOpen, setMobileOpen] = useState(false);
   const [admissionsExpanded, setAdmissionsExpanded] = useState(true);
+  const [academicsExpanded, setAcademicsExpanded] = useState(true);
   const [searchOpen, setSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [notificationsOpen, setNotificationsOpen] = useState(false);
@@ -64,11 +75,10 @@ export function AppShell() {
   const notifRef = useRef<HTMLDivElement>(null);
   const profileRef = useRef<HTMLDivElement>(null);
 
-  // Auto-expand Admissions when inside admissions routes
+  // Keep only the submenu for the current workspace expanded after navigation.
   useEffect(() => {
-    if (location.pathname.startsWith("/admissions")) {
-      setAdmissionsExpanded(true);
-    }
+    setAdmissionsExpanded(location.pathname.startsWith("/admissions"));
+    setAcademicsExpanded(location.pathname.startsWith("/academics"));
   }, [location.pathname]);
 
   // Global shortcut ⌘K / Ctrl+K
@@ -141,19 +151,23 @@ export function AppShell() {
           {navModules.map((item) => {
             const Icon = item.icon;
             const isAdmissions = item.label === "Admissions";
-            const isActive = isAdmissions
-              ? location.pathname.startsWith("/admissions")
+            const isAcademics = item.label === "Academics";
+            const isActive = isAdmissions || isAcademics
+              ? location.pathname.startsWith(item.to)
               : location.pathname === item.to;
 
-            if (isAdmissions) {
+            if (isAdmissions || isAcademics) {
+              const expanded = isAdmissions ? admissionsExpanded : academicsExpanded;
+              const submenu = isAdmissions ? admissionsSubmenu : academicsSubmenu;
               return (
                 <div key={item.to} className="sidebar-group">
                   <button
                     type="button"
                     className={`sidebar-nav-item ${isActive ? "active" : ""}`}
                     onClick={() => {
-                      setAdmissionsExpanded((prev) => !prev);
-                      if (!location.pathname.startsWith("/admissions")) {
+                      if (isAdmissions) setAdmissionsExpanded((prev) => !prev);
+                      else setAcademicsExpanded((prev) => !prev);
+                      if (!location.pathname.startsWith(item.to)) {
                         navigate(item.to);
                         setMobileOpen(false);
                       }
@@ -163,13 +177,13 @@ export function AppShell() {
                     <span>{item.label}</span>
                     <ChevronDown
                       size={15}
-                      className={`nav-chevron ${admissionsExpanded ? "open" : ""}`}
+                      className={`nav-chevron ${expanded ? "open" : ""}`}
                     />
                   </button>
 
-                  {admissionsExpanded && (
+                  {expanded && (
                     <div className="sidebar-submenu">
-                      {admissionsSubmenu.map((sub) => {
+                      {submenu.map((sub) => {
                         const isSubActive = location.pathname === sub.to;
                         return (
                           <NavLink

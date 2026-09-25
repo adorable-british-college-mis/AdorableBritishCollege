@@ -11,6 +11,11 @@ import { admissionsRouter } from "./modules/admissions/admissions.routes.js";
 import { authRouter } from "./modules/auth/auth.routes.js";
 import { dashboardRouter } from "./modules/dashboard/dashboard.routes.js";
 import { studentsRouter } from "./modules/students/students.routes.js";
+import { timetableRouter } from "./modules/timetable/timetable.routes.js";
+import { attendanceRouter } from "./modules/attendance/attendance.routes.js";
+import { behaviourRouter } from "./modules/behaviour/behaviour.routes.js";
+import { reportsRouter } from "./modules/reports/reports.routes.js";
+import { communicationRouter } from "./modules/communication/communication.routes.js";
 
 export const app = express();
 
@@ -18,7 +23,8 @@ app.set("trust proxy", 1);
 app.use(requestContext);
 app.use(helmet());
 app.use(cors({ origin: env.FRONTEND_URL, credentials: true }));
-app.use(express.json({ limit: "1mb" }));
+app.use(express.json({ limit: "1mb", verify: (req, _res, buffer) => { (req as express.Request & { rawBody?: string }).rawBody = buffer.toString("utf8"); } }));
+app.use(express.urlencoded({ extended: false, limit: "256kb" }));
 app.use(cookieParser());
 
 app.get("/health", (_req, res) => {
@@ -31,6 +37,11 @@ app.use("/api/v1/dashboard", dashboardRouter);
 app.use("/api/v1/admissions", admissionsRouter);
 app.use("/api/v1/students", studentsRouter);
 app.use("/api/v1/academics", academicsRouter);
+app.use("/api/v1/timetable", timetableRouter);
+app.use("/api/v1/attendance", attendanceRouter);
+app.use("/api/v1/behaviour", behaviourRouter);
+app.use("/api/v1/reports", reportsRouter);
+app.use("/api/v1/communication", communicationRouter);
 
 app.use(notFoundHandler);
 app.use(errorHandler);

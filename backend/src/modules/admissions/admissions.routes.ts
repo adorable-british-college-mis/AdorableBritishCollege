@@ -12,6 +12,7 @@ import { AppError } from "../../common/errors.js";
 import { requireAuthentication, requirePermission } from "../../security/auth.middleware.js";
 import {
   adminApplicationListSchema,
+  adminApplicationUpdateSchema,
   admissionTransitionSchema,
   documentCategorySchema,
   enrolApplicationSchema,
@@ -53,6 +54,11 @@ admissionsRouter.get("/admin/applications", requireAuthentication, requirePermis
 
 admissionsRouter.get("/admin/applications/:applicationId", requireAuthentication, requirePermission("admissions.read"), asyncHandler(async (req, res) => {
   res.json({ data: await admissions.getAdminApplication(z.uuid().parse(req.params.applicationId)) });
+}));
+
+admissionsRouter.patch("/admin/applications/:applicationId", requireAuthentication, requirePermission("admissions.manage"), asyncHandler(async (req, res) => {
+  const applicationId = z.uuid().parse(req.params.applicationId);
+  res.json({ data: await admissions.updateAdminApplication(applicationId, adminApplicationUpdateSchema.parse(req.body), req.auth!.userId, req.requestId) });
 }));
 
 admissionsRouter.get("/admin/applications/:applicationId/documents/:documentId", requireAuthentication, requirePermission("admissions.read"), asyncHandler(async (req, res) => {

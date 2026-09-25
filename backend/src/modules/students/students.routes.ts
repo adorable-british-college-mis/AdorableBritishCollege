@@ -2,7 +2,7 @@ import { Router } from "express";
 import { z } from "zod";
 import { asyncHandler } from "../../common/async-handler.js";
 import { requireAuthentication, requirePermission } from "../../security/auth.middleware.js";
-import { createStudentSchema, studentListSchema } from "./student.schemas.js";
+import { createStudentSchema, studentListSchema, updateStudentSchema } from "./student.schemas.js";
 import * as students from "./students.service.js";
 
 export const studentsRouter = Router();
@@ -28,6 +28,11 @@ studentsRouter.post("/", requirePermission("students.create"), asyncHandler(asyn
   const input = createStudentSchema.parse(req.body);
   const student = await students.createStudent(input, context(req.auth!), req.requestId);
   res.status(201).json({ data: student });
+}));
+
+studentsRouter.patch("/:studentId", requirePermission("students.update"), asyncHandler(async (req, res) => {
+  const studentId = z.uuid().parse(req.params.studentId);
+  res.json({ data: await students.updateStudent(studentId, updateStudentSchema.parse(req.body), context(req.auth!), req.requestId) });
 }));
 
 studentsRouter.post("/:studentId/archive", requirePermission("students.archive"), asyncHandler(async (req, res) => {

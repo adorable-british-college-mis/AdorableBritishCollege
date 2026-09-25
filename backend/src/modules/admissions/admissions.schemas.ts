@@ -8,7 +8,7 @@ export const personalDetailsSchema = z.object({
   legalLastName: requiredText("Legal last name", 80),
   preferredName: optionalText(80),
   dateOfBirth: z.iso.date(),
-  gender: z.enum(["MALE", "FEMALE", "OTHER", "NOT_STATED"]),
+  gender: z.enum(["MALE", "FEMALE"]),
   nationality: requiredText("Nationality", 80),
   countryOfBirth: requiredText("Country of birth", 80),
   religion: optionalText(80),
@@ -25,8 +25,6 @@ export const yearGroupEntrySchema = z.object({
   pupilType: z.enum(["DAY", "BOARDING", "FLEXI_BOARDING"]),
   currentSchoolYear: requiredText("Current school year", 40),
   proposedStartDate: z.iso.date(),
-  scholarshipInterest: z.boolean(),
-  scholarshipNotes: optionalText(500),
 });
 
 const addressSchema = z.object({
@@ -82,9 +80,9 @@ export const academicBackgroundSchema = z.object({
   previousSchoolCountry: requiredText("School country", 80),
   attendanceFrom: z.iso.date(),
   attendanceTo: z.iso.date().optional().or(z.literal("")),
-  curriculum: z.enum(["BRITISH", "NIGERIAN", "AMERICAN", "IB", "MONTESSORI", "OTHER"]),
+  curriculum: z.literal("NIGERIAN_BRITISH_BLEND"),
   currentYearGroup: requiredText("Current year group", 40),
-  reasonForLeaving: requiredText("Reason for leaving", 600),
+  reasonForLeaving: z.enum(["ACADEMIC_PROGRESSION", "RELOCATION", "CHANGE_OF_CURRICULUM", "BOARDING_REQUIREMENT", "FAMILY_CIRCUMSTANCES", "CURRENT_SCHOOL_CLOSURE", "OTHER"]),
   headteacherName: optionalText(120),
   schoolEmail: z.union([z.email(), z.literal("")]),
   schoolPhone: optionalText(30),
@@ -156,8 +154,6 @@ export const sectionKeys = Object.keys(sectionSchemas) as SectionKey[];
 
 export const trackApplicationSchema = z.object({
   applicationNumber: z.string().trim().min(8).max(32),
-  email: z.email(),
-  dateOfBirth: z.iso.date(),
 });
 
 export const adminApplicationListSchema = z.object({
@@ -166,6 +162,15 @@ export const adminApplicationListSchema = z.object({
   search: z.string().trim().max(120).optional(),
   status: z.enum(["SUBMITTED", "UNDER_REVIEW", "ASSESSMENT", "INTERVIEW", "OFFERED", "WAITLISTED", "ACCEPTED", "REJECTED", "WITHDRAWN", "ENROLLED"]).optional(),
   yearGroup: z.enum(["YEAR_7", "YEAR_9", "YEAR_12"]).optional(),
+});
+
+export const adminApplicationUpdateSchema = z.object({
+  firstName: requiredText("First name", 80),
+  lastName: requiredText("Last name", 80),
+  dateOfBirth: z.iso.date(),
+  email: z.email(),
+  phone: z.string().trim().min(7).max(30),
+  entryYearGroup: z.enum(["YEAR_7", "YEAR_9", "YEAR_12"]),
 });
 
 export const admissionTransitionSchema = z.object({

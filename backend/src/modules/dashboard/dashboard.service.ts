@@ -10,7 +10,7 @@ const addDays = (value: Date, days: number) => new Date(value.getTime() + days *
 
 function attendanceSummary(records: Array<{ status: AttendanceStatus }>) {
   const count = (status: AttendanceStatus) => records.filter((record) => record.status === status).length;
-  const present = count("PRESENT");
+  const present = count("PRESENT") + count("LATE");
   const authorisedAbsence = count("AUTHORISED_ABSENCE");
   const unauthorisedAbsence = count("UNAUTHORISED_ABSENCE");
   return { present, authorisedAbsence, unauthorisedAbsence, total: records.length, percentage: percent(present, records.length) };
@@ -48,7 +48,7 @@ export async function getDashboardSummary() {
     previousTerm ? prisma.attendanceRecord.findMany({ where: { register: { termId: previousTerm.id } }, select: { status: true } }) : Promise.resolve([]),
     termId ? prisma.assessmentResult.findMany({ where: { assessment: { termId } }, select: { status: true, attainmentPct: true, progressPct: true, assessment: { select: { yearGroup: { select: { name: true, displayOrder: true } } } } } }) : Promise.resolve([]),
     previousTerm ? prisma.assessmentResult.findMany({ where: { assessment: { termId: previousTerm.id } }, select: { status: true } }) : Promise.resolve([]),
-    termId ? prisma.behaviourEvent.findMany({ where: { termId }, select: { type: true, resolvedAt: true } }) : Promise.resolve([]),
+    termId ? prisma.behaviourEvent.findMany({ where: { termId, archivedAt: null }, select: { type: true, resolvedAt: true } }) : Promise.resolve([]),
     termId ? prisma.timetableSlot.findMany({ where: { termId, weekday: now.getDay() }, select: { id: true, startsAt: true, endsAt: true, periodLabel: true, room: true, subject: { select: { name: true } }, yearGroup: { select: { name: true } } }, orderBy: { startsAt: "asc" }, take: 5 }) : Promise.resolve([]),
     termId ? prisma.attendanceRegister.count({ where: { termId, date: today, status: "OPEN" } }) : Promise.resolve(0),
     termId ? prisma.assessment.count({ where: { termId, dueAt: { gte: today, lt: tomorrow } } }) : Promise.resolve(0),

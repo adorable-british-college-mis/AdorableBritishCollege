@@ -40,3 +40,5 @@ export const createStudentSchema = z.object({
     phone: z.string().trim().max(32).optional(),
   }),
 });
+
+export const updateStudentSchema = createStudentSchema;

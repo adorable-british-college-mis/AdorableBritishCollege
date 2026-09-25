@@ -4,10 +4,11 @@ import { prisma } from "../../db/prisma.js";
 import { resolveStudentScope, type StudentScopeContext } from "../../security/student-scope.js";
 import { recordAuditEvent } from "../audit/audit.service.js";
 import type { z } from "zod";
-import type { createStudentSchema, studentListSchema } from "./student.schemas.js";
+import type { createStudentSchema, studentListSchema, updateStudentSchema } from "./student.schemas.js";
 
 type ListInput = z.infer<typeof studentListSchema>;
 type CreateInput = z.infer<typeof createStudentSchema>;
+type UpdateInput = z.infer<typeof updateStudentSchema>;
 
 const studentSelect = {
   id: true,
@@ -34,7 +35,9 @@ const studentSelect = {
     where: { endsOn: null },
     take: 1,
     select: {
+      id: true,
       startsOn: true,
+      academicYear: { select: { id: true, name: true } },
       yearGroup: { select: { id: true, code: true, name: true } },
       formGroup: { select: { id: true, code: true, name: true } },
       house: { select: { id: true, code: true, name: true } },
@@ -172,6 +175,42 @@ export async function createStudent(input: CreateInput, actor: StudentScopeConte
   });
   await recordAuditEvent({ actorUserId: actor.userId, action: "student.create", entityType: "Student", entityId: student.id, requestId, after: student as unknown as Prisma.InputJsonValue });
   return withAttendance(student);
+}
+
+export async function updateStudent(studentId: string, input: UpdateInput, actor: StudentScopeContext, requestId: string) {
+  if (!actor.permissions.includes("students.update")) throw new AppError(403, "FORBIDDEN", "You cannot update students.");
+  const existing = await prisma.student.findFirst({ where: { id: studentId, AND: [scopeWhere(actor)] }, select: { id: true, admissionNumber: true, firstName: true, lastName: true, status: true } });
+  if (!existing) throw new AppError(404, "STUDENT_NOT_FOUND", "The student was not found or is outside your permitted scope.");
+  const formGroup = input.formGroupId ? await prisma.formGroup.findUnique({ where: { id: input.formGroupId }, select: { yearGroupId: true, isActive: true } }) : null;
+  if (formGroup && (!formGroup.isActive || formGroup.yearGroupId !== input.yearGroupId)) throw new AppError(400, "INVALID_FORM_GROUP", "The selected form does not belong to the selected year group.");
+  const admissionNumber = input.admissionNumber || existing.admissionNumber;
+  const duplicate = await prisma.student.findFirst({ where: { admissionNumber, id: { not: studentId } }, select: { id: true } });
+  if (duplicate) throw new AppError(409, "ADMISSION_NUMBER_EXISTS", "That admission number is already in use.");
+
+  const updated = await prisma.$transaction(async (tx) => {
+    await tx.student.update({ where: { id: studentId }, data: {
+      admissionNumber, title: input.title || null, firstName: input.firstName, middleName: input.middleName || null,
+      lastName: input.lastName, preferredName: input.preferredName || null, dateOfBirth: new Date(`${input.dateOfBirth}T00:00:00.000Z`),
+      gender: input.gender, nationality: input.nationality || null, email: input.email || null, phone: input.phone || null,
+      addressLine1: input.addressLine1 || null, addressLine2: input.addressLine2 || null, townCity: input.townCity || null,
+      postcode: input.postcode || null, status: input.status,
+    } });
+    const enrollment = await tx.enrollment.findFirst({ where: { studentId, endsOn: null }, orderBy: { startsOn: "desc" } });
+    const enrollmentData = { yearGroupId: input.yearGroupId, academicYearId: input.academicYearId, formGroupId: input.formGroupId || null, houseId: input.houseId || null, startsOn: new Date(`${input.enrolmentDate}T00:00:00.000Z`) };
+    if (enrollment) await tx.enrollment.update({ where: { id: enrollment.id }, data: enrollmentData });
+    else await tx.enrollment.create({ data: { studentId, ...enrollmentData } });
+    const primary = await tx.studentGuardian.findFirst({ where: { studentId, isPrimaryContact: true }, include: { guardian: true } });
+    if (primary) {
+      await tx.parentGuardian.update({ where: { id: primary.guardianId }, data: { firstName: input.guardian.firstName, lastName: input.guardian.lastName, email: input.guardian.email || null, phone: input.guardian.phone || null } });
+      await tx.studentGuardian.update({ where: { studentId_guardianId: { studentId, guardianId: primary.guardianId } }, data: { relationship: input.guardian.relationship } });
+    } else {
+      const guardian = await tx.parentGuardian.create({ data: { firstName: input.guardian.firstName, lastName: input.guardian.lastName, email: input.guardian.email || null, phone: input.guardian.phone || null } });
+      await tx.studentGuardian.create({ data: { studentId, guardianId: guardian.id, relationship: input.guardian.relationship, isPrimaryContact: true, hasPortalAccess: true, hasParentalResponsibility: true } });
+    }
+    return tx.student.findUniqueOrThrow({ where: { id: studentId }, select: studentSelect });
+  });
+  await recordAuditEvent({ actorUserId: actor.userId, action: "student.update", entityType: "Student", entityId: studentId, requestId, before: existing, after: updated as unknown as Prisma.InputJsonValue });
+  return withAttendance(updated);
 }
 
 export async function archiveStudent(studentId: string, actor: StudentScopeContext, requestId: string) {
