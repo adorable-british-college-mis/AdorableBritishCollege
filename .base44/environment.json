@@ -1,0 +1,34 @@
+{
+  "previewPort": 3000,
+  "healthPath": "/",
+  "startCommand": "docker compose -f docker-compose.base44.yml up -d",
+  "secrets": [
+    {
+      "name": "JWT_ACCESS_SECRET",
+      "description": "Signing secret for JWT access tokens (min 32 chars). Generated dev placeholder; replace with your own for production.",
+      "requiredAtBoot": true,
+      "generatedForDevelopment": true
+    },
+    {
+      "name": "JWT_REFRESH_SECRET",
+      "description": "Signing secret for JWT refresh tokens (min 32 chars). Generated dev placeholder; replace with your own for production.",
+      "requiredAtBoot": true,
+      "generatedForDevelopment": true
+    },
+    {
+      "name": "RESEND_API_KEY",
+      "description": "Resend API key for outbound email communications. Optional — leave blank to disable email delivery.",
+      "requiredAtBoot": false
+    },
+    {
+      "name": "TWILIO_ACCOUNT_SID",
+      "description": "Twilio account SID for WhatsApp communications. Optional — leave blank to disable WhatsApp delivery.",
+      "requiredAtBoot": false
+    },
+    {
+      "name": "TWILIO_AUTH_TOKEN",
+      "description": "Twilio auth token for WhatsApp communications. Optional — leave blank to disable WhatsApp delivery.",
+      "requiredAtBoot": false
+    }
+  ]
+}

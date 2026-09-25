@@ -48,9 +48,11 @@ ALTER TABLE "CurriculumSubject" ADD COLUMN "curriculumId" UUID;
 ALTER TABLE "CurriculumSubject" ADD COLUMN "isActive" BOOLEAN NOT NULL DEFAULT true;
 ALTER TABLE "CurriculumSubject" ADD COLUMN "archivedAt" TIMESTAMP(3);
 ALTER TABLE "CurriculumSubject" ADD COLUMN "updatedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP;
+ALTER TABLE "CurriculumSubject" ALTER COLUMN "updatedAt" DROP DEFAULT;
 ALTER TABLE "Assessment" ADD COLUMN "isActive" BOOLEAN NOT NULL DEFAULT true;
 ALTER TABLE "Assessment" ADD COLUMN "archivedAt" TIMESTAMP(3);
 ALTER TABLE "Assessment" ADD COLUMN "updatedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP;
+ALTER TABLE "Assessment" ALTER COLUMN "updatedAt" DROP DEFAULT;
 
 CREATE UNIQUE INDEX "Department_code_key" ON "Department"("code");
 CREATE UNIQUE INDEX "Department_name_key" ON "Department"("name");
