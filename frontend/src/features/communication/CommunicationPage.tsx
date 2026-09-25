@@ -4,7 +4,7 @@ import {
   Megaphone, MessageCircle, MessageSquare, Paperclip, Phone, Plus,
   Search, Send, Sparkles, Users, Video, X,
 } from "lucide-react";
-import { useMemo, useState, type FormEvent } from "react";
+import { Fragment, useMemo, useState, type FormEvent } from "react";
 import {
   ApiError, archiveAnnouncement, archiveCommunicationThread, createAnnouncement,
   createCommunicationThread, draftCommunicationWithAssistant, getCommunicationOverview,
@@ -453,6 +453,25 @@ function ComposeModal({
     }
   }
 
+  function previewInNewWindow() {
+    const paragraphs = body
+      .split(/\n{2,}/)
+      .map((p) => p.trim())
+      .filter(Boolean);
+    const messageHtml = paragraphs.length
+      ? paragraphs
+          .map(
+            (p) =>
+              `<p style="margin:0 0 18px 0;line-height:26px;">${p.replaceAll("\n", "<br>")}</p>`,
+          )
+          .join("")
+      : "";
+    const year = new Date().getFullYear();
+    const html = `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${subject || "Email preview"}</title></head><body style="margin:0;padding:0;background:#f4f6f9;font-family:Arial,Helvetica,sans-serif;color:#172033;"><table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="background:#f4f6f9;"><tr><td align="center" style="padding:32px 16px;"><table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="max-width:600px;background:#fff;border-radius:16px;overflow:hidden;box-shadow:0 4px 24px rgba(18,33,59,.10);"><tr><td style="padding:36px 40px;background:#3b1e78;"><table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0"><tr><td width="52" valign="middle"><div style="width:48px;height:48px;border-radius:50%;border:2px solid #c4a8f0;text-align:center;line-height:48px;"><span style="font-size:18px;font-weight:700;color:#fff;letter-spacing:1px;">ABC</span></div></td><td style="padding-left:16px;"><div style="font-size:22px;line-height:28px;font-weight:700;color:#fff;">Adorable British College</div><div style="margin-top:4px;font-size:13px;line-height:18px;color:#d4c2f0;">Official School Communication</div></td></tr></table></td></tr><tr><td style="padding:36px 40px 28px 40px;"><div style="margin-bottom:10px;font-size:11px;font-weight:700;letter-spacing:1.2px;text-transform:uppercase;color:#7c54b5;">School Communication</div><h1 style="margin:0 0 24px 0;padding-bottom:20px;border-bottom:1px solid #eceef2;font-size:24px;line-height:32px;font-weight:700;color:#172033;">${subject || "Your email subject"}</h1><p style="margin:0 0 20px 0;font-size:16px;line-height:26px;color:#3a4258;">Dear ${previewRecipientName},</p><div style="font-size:16px;line-height:26px;color:#3a4258;">${messageHtml}</div><table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="margin-top:28px;"><tr><td style="padding:16px 18px;background:#f5f3ff;border-left:4px solid #3b1e78;border-radius:8px;"><table role="presentation" cellspacing="0" cellpadding="0" border="0"><tr><td width="28" valign="top"><div style="width:22px;height:22px;border-radius:50%;background:#3b1e78;color:#fff;text-align:center;font-size:14px;font-weight:700;line-height:22px;">i</div></td><td style="padding-left:12px;"><strong style="display:block;margin-bottom:4px;font-size:14px;color:#3b1e78;">Need assistance?</strong><span style="font-size:13px;line-height:21px;color:#5b5470;">Please contact the school office if you have any questions regarding this communication.</span></td></tr></table></td></tr></table><div style="margin-top:28px;font-size:15px;line-height:24px;color:#3a4258;">Kind regards,<br><strong style="color:#3b1e78;">Adorable British College</strong></div></td></tr><tr><td align="center" style="padding:22px 40px;background:#f9fafb;border-top:1px solid #eceef2;"><p style="margin:0 0 5px 0;font-size:12px;line-height:18px;color:#8a92a0;">This email was sent by Adorable British College.</p><p style="margin:0;font-size:12px;line-height:18px;color:#a0a6b2;">This communication may contain information intended only for the recipient.</p></td></tr></table><div style="max-width:600px;padding:16px 20px 0 20px;text-align:center;font-size:11px;line-height:18px;color:#979daa;">&copy; ${year} Adorable British College</div></td></tr></table></body></html>`;
+    const blob = new Blob([html], { type: "text/html" });
+    window.open(URL.createObjectURL(blob), "_blank");
+  }
+
   function toggleRecipient(recipient: Recipient) {
     setSelected((current) => {
       const next = new Set(current);
@@ -645,7 +664,108 @@ function ComposeModal({
                     Recipients
                   </label>
 
-                  {recipientPicker}
+                  <div className="email-recipient-container">
+                    <div className="email-recipient-search-row">
+                      <Search />
+
+                      <input
+                        value={recipientSearch}
+                        onChange={(e) =>
+                          setRecipientSearch(e.target.value)
+                        }
+                        placeholder="Search students, parents or staff..."
+                      />
+
+                      <strong className="email-recipient-count">
+                        {selected.size} selected
+                      </strong>
+                    </div>
+
+                    {selectedRecipients.length > 0 && (
+                      <div className="email-recipient-selected-list">
+                        {selectedRecipients.map((recipient) => (
+                          <div
+                            key={recipient.key}
+                            className="email-recipient-selected-item"
+                          >
+                            <span className="email-recipient-avatar">
+                              {initials(recipient.name)}
+                            </span>
+
+                            <div className="email-recipient-info">
+                              <strong>{recipient.name}</strong>
+
+                              <small>
+                                {recipient.role}
+
+                                {recipient.email
+                                  ? ` · ${recipient.email}`
+                                  : ""}
+                              </small>
+                            </div>
+
+                            <button
+                              type="button"
+                              onClick={() =>
+                                toggleRecipient(recipient)
+                              }
+                            >
+                              <X />
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+
+                    {recipientSearch && (
+                      <div className="email-recipient-results">
+                        {visibleRecipients.map((recipient) => (
+                          <button
+                            type="button"
+                            key={recipient.key}
+                            className={
+                              selected.has(recipient.key)
+                                ? "selected"
+                                : ""
+                            }
+                            onClick={() =>
+                              toggleRecipient(recipient)
+                            }
+                          >
+                            <span>
+                              {initials(recipient.name)}
+                            </span>
+
+                            <div>
+                              <strong>
+                                {recipient.name}
+                              </strong>
+
+                              <small>
+                                {recipient.role}
+
+                                {recipient.email
+                                  ? ` · ${recipient.email}`
+                                  : ""}
+                              </small>
+                            </div>
+
+                            {selected.has(recipient.key) ? (
+                              <Check />
+                            ) : (
+                              <Plus />
+                            )}
+                          </button>
+                        ))}
+
+                        {!visibleRecipients.length && (
+                          <div className="communication-recipient-empty">
+                            No matching recipients found.
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </div>
                 </div>
 
                 <label className="communication-email-field">
@@ -670,12 +790,12 @@ function ComposeModal({
                     onChange={(e) => setBody(e.target.value)}
                     required
                     rows={12}
-                    maxLength={10_000}
+                    maxLength={2000}
                     placeholder="Write your message..."
                   />
 
                   <small className="communication-character-count">
-                    {body.length}/10000
+                    {body.length}/2000
                   </small>
                 </label>
 
@@ -688,6 +808,18 @@ function ComposeModal({
                     <small>{event.detail}</small>
                   </div>
                 )}
+
+                {subject &&
+                  body &&
+                  selected.size > 0 &&
+                  !notice && (
+                    <div className="communication-email-validation">
+                      <Check />
+
+                      Your message looks good. Review the
+                      preview before sending.
+                    </div>
+                  )}
 
                 {notice && (
                   <div
@@ -954,6 +1086,16 @@ function ComposeModal({
         {/* FOOTER */}
 
         <div className="modal-footer">
+          {emailMode && (
+            <button
+              type="button"
+              className="secondary-button"
+              onClick={previewInNewWindow}
+            >
+              Preview in new window
+            </button>
+          )}
+
           <button
             type="button"
             className="secondary-button"

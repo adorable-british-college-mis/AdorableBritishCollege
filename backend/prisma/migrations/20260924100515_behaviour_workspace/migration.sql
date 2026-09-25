@@ -23,9 +23,6 @@ DROP INDEX "AttendanceRegister_termId_yearGroupId_date_periodLabel_key";
 DROP INDEX "BehaviourEvent_type_resolvedAt_idx";
 
 -- AlterTable
-ALTER TABLE "Assessment" ALTER COLUMN "updatedAt" DROP DEFAULT;
-
--- AlterTable
 ALTER TABLE "AttendanceRegister" ALTER COLUMN "updatedAt" DROP DEFAULT;
 
 -- AlterTable
@@ -38,9 +35,6 @@ ADD COLUMN     "points" INTEGER NOT NULL DEFAULT 0,
 ADD COLUMN     "staffId" UUID,
 ADD COLUMN     "status" "BehaviourEventStatus" NOT NULL DEFAULT 'OPEN',
 ADD COLUMN     "updatedAt" TIMESTAMP(3) NOT NULL;
-
--- AlterTable
-ALTER TABLE "CurriculumSubject" ALTER COLUMN "updatedAt" DROP DEFAULT;
 
 -- CreateTable
 CREATE TABLE "BehaviourCategory" (
